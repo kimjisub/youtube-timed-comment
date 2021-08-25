@@ -60,9 +60,9 @@ class YoutubeApp {
 window.YoutubeApp = new YoutubeApp(location.href);
 
 
-// onMessage = (event) => {
-// 	this.log('onMessage', event.data);
-// }
+onMessage = (event) => {
+	this.log('onMessage', event.data);
+}
 
 
 function main() {
