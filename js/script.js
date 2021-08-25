@@ -1,33 +1,69 @@
-/* global extensionId */
+class YoutubeApp {
+	constructor(url){
+		this.log('init')
+		this.url = url;
+		this.videoId = new URLSearchParams(new URL(this.url).search).get('v');
+		this.comments = []
 
-timeOffset = 0
-function init() {
-	srvTime((serverTime, timeOffset_) => {
-		timeOffset = timeOffset_
+		// onMessage = (event) => {
+		// 	this.log('onMessage', event.data);
+		// }
+		this.startGetComment()
+	}
 
-		setTimeout(disableAutoPlay, 1000)
+	sendMessage(msg){
+		this.log('sendMessage', msg);
+		chrome.runtime.sendMessage(extensionId, msg)
+	}
 
-		chrome.runtime.sendMessage(extensionId, {
-			scriptLoaded: true
-		})
-		console.log('───────────────────────────────')
-		console.log('Script Loaded', extensionId)
-		console.log('href', document.location.href)
-		console.log('timeOffset', timeOffset)
-		main()
-	})
+	startGetComment(continuation) {
+		const payload = {
+			videoId: this.videoId,
+			sortByNewest: false,
+			continuation,
+			mustSetCookie: false,
+		};
+
+		ytcm
+			.getComments(payload)
+			.then((data) => {
+
+				data.comments.forEach(value => {
+					const timeTagString = (value.text.match(/\d+:\d{1,2}/g) || [])[0]
+					if(timeTagString){
+						const [minutes, seconds] = timeTagString.split(':').map(v => parseInt(v))
+						value.timeTag = { minutes, seconds }
+					}
+						
+					this.comments.push(value)
+
+				})
+				this.log(this.comments.length, this.comments.filter(comment => comment.timeTag))
+				
+				if(data.continuation)
+					this.startGetComment(data.continuation)
+				else
+					this.log('comment end~!')
+
+			})
+			.catch((error) => {
+				this.log(error);
+			});
+	}
+
+	getVideoView() {
+		return document.querySelector('.html5-main-video')
+	}
+
+	log(...msg){
+		console.log('YTC', ...msg)
+	}
 }
 
-onPlayed = () => {
-	played()
-}
-onPaused = () => {
-	paused()
-}
-onMessage = event => {
-	if (event.data.changeVideo) changeVideo(event.data.changeVideo)
-	if (event.data.detatch) detatch()
-}
+window.YoutubeApp = new YoutubeApp(location.href);
+
+
+
 function main() {
 	if (document.location.href.includes('youtube.com')) {
 		let videoView = getVideoView()
@@ -109,19 +145,3 @@ function pause(currentTime) {
 function getVideoView() {
 	return document.querySelector('.html5-main-video')
 }
-
-var xmlHttp
-function srvTime(callback) {
-	xmlHttp = new XMLHttpRequest()
-	xmlHttp.onload = () => {
-		let serverTime = new Date(xmlHttp.getResponseHeader('Date')).getTime()
-		let localTime = new Date().getTime()
-		let timeOffset = serverTime - localTime
-		callback(serverTime, timeOffset)
-	}
-	xmlHttp.open('HEAD', window.location.href.toString(), true)
-	xmlHttp.setRequestHeader('Content-Type', 'text/html')
-	xmlHttp.send('')
-}
-
-init()
