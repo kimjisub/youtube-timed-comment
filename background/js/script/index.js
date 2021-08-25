@@ -5,9 +5,6 @@ class YoutubeApp {
 		this.videoId = new URLSearchParams(new URL(this.url).search).get('v');
 		this.comments = []
 
-		// onMessage = (event) => {
-		// 	this.log('onMessage', event.data);
-		// }
 		this.startGetComment()
 	}
 
@@ -62,6 +59,10 @@ class YoutubeApp {
 
 window.YoutubeApp = new YoutubeApp(location.href);
 
+
+// onMessage = (event) => {
+// 	this.log('onMessage', event.data);
+// }
 
 
 function main() {

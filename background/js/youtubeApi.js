@@ -3,11 +3,11 @@ class YoutubeApi {
 		this.tab = tab;
 		this.url = tab.url;
 		this.videoId = new URLSearchParams(new URL(this.url).search).get('v');
-		this.ready = false
+		this.active = false
         this.log('New Youtube', this.url);
 
         this.loadApp(()=>{
-            this.ready = true
+            this.active = true
         })
 	}
 
@@ -16,12 +16,11 @@ class YoutubeApi {
 	}
 
 	loadApp(callback) {
-		this.log('loadScript');
         this.loadScript({
             code: `extensionId = '${chrome.runtime.id}'`,
         }, () => {
-            this.loadScript({file: `lib/yt-comment-scraper.js`}, ()=>{
-                this.loadScript({file: `js/script.js`}, callback)
+            this.loadScript({file: `background/js/script/yt-comment-scraper.js`}, ()=>{
+                this.loadScript({file: `background/js/script/index.js`}, callback)
             })
         })
 	}
