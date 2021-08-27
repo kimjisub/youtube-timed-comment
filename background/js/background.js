@@ -1,15 +1,13 @@
 const youtubes = {};
 
 chrome.tabs.onUpdated.addListener((tabId, changeInfo, tab) => {
-	console.log(changeInfo);
-
-	if (changeInfo.status == 'complete') {
-		if (tab.url.includes('youtube.com/watch')) {
+	if (tab.url.includes('youtube.com/watch'))
+		if (changeInfo.status == 'complete') {
+			console.log(tabId, changeInfo);
 			youtubes[tabId]?.destructor();
 			youtubes[tabId] = new YoutubeApi(tab);
+			return;
 		}
-		return;
-	}
 
 	//console.log(tabId, 'tab changed', changeInfo)
 });
