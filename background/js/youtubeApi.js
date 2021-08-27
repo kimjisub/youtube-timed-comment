@@ -6,7 +6,7 @@ class YoutubeApi {
 		this.active = false;
 		this.log('New Youtube', this.url);
 
-		this.loadApp(() => {
+		this.loadApp().then(() => {
 			this.active = true;
 		});
 	}
@@ -15,29 +15,19 @@ class YoutubeApi {
 		this.log('Close Youtube', this.url);
 	}
 
-	loadApp(callback) {
-		this.loadScript(
-			{
-				code: `extensionId = '${chrome.runtime.id}'`,
-			},
-			() => {
-				this.loadScript(
-					{ file: `background/js/script/yt-comment-scraper.js` },
-					() => {
-						this.loadScript({ file: `background/js/script/chart.js` }, () => {
-							this.loadScript(
-								{ file: `background/js/script/index.js` },
-								callback
-							);
-						});
-					}
-				);
-			}
-		);
+	async loadApp() {
+		return Promise.all([
+			this.loadScript({ code: `extensionId = '${chrome.runtime.id}'` }),
+			this.loadScript({ file: `background/js/script/yt-comment-scraper.js` }),
+			this.loadScript({ file: `background/js/script/chart.js` }),
+			this.loadScript({ file: `background/js/script/index.js` }),
+		]);
 	}
 
-	loadScript(script, callback) {
-		chrome.tabs.executeScript(this.tab.id, script, callback);
+	async loadScript(script) {
+		return new Promise((resolve, reject) => {
+			chrome.tabs.executeScript(this.tab.id, script, resolve);
+		});
 	}
 
 	sendMessage(data) {
