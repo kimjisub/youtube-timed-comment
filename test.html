@@ -1,83 +1,156 @@
 <html>
-    <head>
-        <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-    </head>
+	<head>
+		<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+	</head>
 
-<body>
-<div>
-  <canvas id="myChart"></canvas>
-</div>
+	<body>
+		<div>
+			<canvas
+				id="myChart"
+				style="width: 100%; height: 200px; background: #eee"
+			></canvas>
+		</div>
 
-<script>
-function histogram(data, {size, min, max}) {
-    min = min == undefined ? Infinity : min;
-    max = max == undefined ? Infinity : max;
+		<script>
+			function toHistogram(data, { size, min, max }) {
+				let cmin = Infinity;
+				let cmax = -Infinity;
 
-    for (const item of data) {
-        if (item < min) min = item;
-        else if (item > max) max = item;
-    }
+				for (const item of data) {
+					if (item < cmin) cmin = item;
+					else if (item > cmax) cmax = item;
+				}
 
-    const bins = Math.ceil((max - min + 1) / size);
+				min = min != undefined ? min : cmin;
+				max = max != undefined ? max : cmax;
 
-    const histogram = new Array(bins).fill(0);
+				const histoSize = Math.ceil((max - min + 1) / size);
 
-    for (const item of data) {
-        histogram[Math.floor((item - min) / size)]++;
-    }
+				const res = new Array(histoSize).fill(0);
 
-    return {min, max, histogram};
-}
+				for (const item of data) {
+					console.log(item , Math.floor((item - min) / histoSize));
+					const index = Math.floor((item - min) / size)
+					if(0 <= index && index < res.length)
+						res[index]++;
+				}
 
+				return { data: res, info: { min, max } };
+			}
 
-const rawData = [500,267,372,22,450,235,363,372,186,207,3,24,25,22,340,357,271,271,315,27,384,259,501,325,266,230,265,275,370,371,185,463,26,270,521,435,20,160,122,272,27,88,368,128,385,260,521,399,235,259,128,507,214,266,306,24,384,77,28,272,100,321,26,395,377,167,64,216,523,286,100,27,395,28,270,436,258,271,272,287,288,27,155,26,326,27]
-const dataRange = {min:1, max:518}
+			function applyAmbientWeights(list, around){
+				const size = list.length
+				const ret = new Array(size).fill(0);
+				for(let i=0;i<size;i++){
+					let sum = 0;
+					let count = 0;
+					const start = Math.max(0, i-around)
+					const end = Math.min(size-1, i+around)
+					for(let j=start;j<=end;j++){
+						const diff = Math.abs(i-j)
+						const diffRatio = (diff/around) || 0
+						const weight = 1 - diffRatio**2
+						if(list[j] > 0){
+							sum += weight * list[j]
+							count++;
+						}
+					}
+					
+					console.log(count)
+					ret[i] = sum
+				}
+				return ret
+			}
+			
 
-const histoData = histogram(rawData, 10)
+			const rawData = [100, 230,
+				500, 267, 372, 22, 450, 235, 363, 372, 186, 207, 3, 24, 25, 22, 340,
+				357, 271, 271, 315, 27, 384, 259, 501, 325, 266, 230, 265, 275, 370,
+				371, 185, 463, 26, 270, 521, 435, 20, 160, 122, 272, 27, 88, 368, 128,
+				385, 260, 521, 399, 235, 259, 128, 507, 214, 266, 306, 24, 384, 77, 28,
+				272, 100, 321, 26, 395, 377, 167, 64, 216, 523, 286, 100, 27, 395, 28,
+				270, 436, 258, 271, 272, 287, 288, 27, 155, 26, 326, 27,
+			];
 
-const distribution = [];
+			const histo = toHistogram(rawData, { size: 1, min: 0, max: 518 });
+			const ambientHisto = applyAmbientWeights(histo.data, 10)
+			console.log('rawData', rawData)
+			console.log('histo',histo);
+			console.log('ambientHisto', ambientHisto)
 
-for(let i=0;i<rawData.length;i++) {
-    const sum = 0; // 
-    for(let j=0;j<distribution.length;j++) {
-        sum += 
-    }
-}
+			const distribution = [];
 
+			const data = {
+				labels: new Array(ambientHisto.length).fill(''),
+				datasets: [
+					{
+						label: '댓글 밀도',
+						backgroundColor: 'rgb(0, 99, 132)',
+						borderColor: 'rgb(0, 99, 132)',
+						fill: true,
+						showLine: false,
+						tension: 0.2,
+						pointBackgroundColor: 'rgba(0, 0, 0, 0)',
+						pointBorderColor: 'rgba(0, 0, 0, 0)',
+						data: histo.data,
+						type: 'bar'
+					},
+					{
+						label: '댓글 개수',
+						backgroundColor: 'rgb(255, 99, 132)',
+						borderColor: 'rgb(255, 99, 132)',
+						fill: true,
+						showLine: false,
+						pointBackgroundColor: 'rgba(0, 0, 0, 0)',
+						pointBorderColor: 'rgba(0, 0, 0, 0)',
+						data: ambientHisto,
+					},
+				],
+			};
+			const options ={
+				animation: false,
+				responsive: true,
+				maintainAspectRatio: false,
+				bezierCurve : true,
+				layout:{
+					padding: 0
+				},
+				scale: {
+					ticks: {
+						display: false,
+						maxTicksLimit: 0,
+					},
+				},
+				scales:{
+					xAxis: {
+						display: false,
+					},
+					yAxis: {
+						display: false,
+					},
 
-
-
-const labels = [
-  'January',
-  'February',
-  'March',
-  'April',
-  'May',
-  'June',
-];
-const data = {
-  labels: labels,
-  datasets: [{
-    label: 'My First dataset',
-    backgroundColor: 'rgb(255, 99, 132)',
-    borderColor: 'rgb(255, 99, 132)',
-    data: [0, 10, 5, 2, 20, 30, 45],
-  }]
-};
-const config = {
-  type: 'line',
-  data: data,
-  normalized: true,
-  options: {}
-};
-
-
- var myChart = new Chart(
-    document.getElementById('myChart'),
-    config
-  );
-
-</script>
-
-</body>
+				},
+				interaction: {
+					intersect: true,
+					axis: 'xy',
+					mode: 'index',
+				},
+				plugins:{
+					
+					legend:{
+						display: false
+					},
+					tooltip:{
+						//enabled: false
+					}
+				}
+			}
+			const config = {
+				type: 'line',
+				data,
+				options
+			};
+			var myChart = new Chart(document.getElementById('myChart'), config);
+		</script>
+	</body>
 </html>
