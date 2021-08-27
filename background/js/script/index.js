@@ -127,9 +127,7 @@ class YoutubeApp {
 				});
 				this.log(
 					this.comments.length,
-					this.comments
-						.filter((comment) => comment.timeTags.length > 0)
-						.map((v) => v.timeTags[0].timeSec)
+					this.comments.filter((comment) => comment.timeTags.length > 0).length
 				);
 				this.updateChart();
 
@@ -144,7 +142,8 @@ class YoutubeApp {
 	initChart() {
 		this.log('init chart');
 		this.canvas = document.createElement('canvas');
-		this.canvas.style = 'width:100%;height:100px;bottom:0;position:absolute;';
+		this.canvas.style =
+			'width:100%;height:100px;bottom:-1px;position:absolute;';
 		document
 			.querySelector(
 				'#movie_player > div.ytp-chrome-bottom > div.ytp-progress-bar-container > div.ytp-progress-bar'
@@ -194,8 +193,8 @@ class YoutubeApp {
 			datasets: [
 				{
 					label: '댓글 개수',
-					backgroundColor: 'rgb(0, 99, 132, 0.7)',
-					borderColor: 'rgb(0, 99, 132, 0.7)',
+					backgroundColor: 'rgb(0, 99, 132, 0.5)',
+					borderColor: 'rgb(0, 99, 132, 0.5)',
 					fill: true,
 					showLine: false,
 					tension: 0.2,
@@ -206,8 +205,8 @@ class YoutubeApp {
 				},
 				{
 					label: '댓글 밀도',
-					backgroundColor: 'rgb(255, 99, 132, 0.7)',
-					borderColor: 'rgb(255, 99, 132, 0.7)',
+					backgroundColor: 'rgb(255, 255, 255, 0.5)',
+					borderColor: 'rgb(255, 255, 255, 0.5)',
 					fill: true,
 					showLine: false,
 					pointBackgroundColor: 'rgba(0, 0, 0, 0)',
@@ -232,7 +231,7 @@ class YoutubeApp {
 			min: 0,
 			max: Math.ceil(this.video.duration),
 		});
-		const ambientHisto = applyAmbientWeights(histo.data, 10);
+		const ambientHisto = applyAmbientWeights(histo.data, 3);
 		//console.log('rawData', rawData);
 		//console.log('histo', histo);
 		//console.log('ambientHisto', ambientHisto);
