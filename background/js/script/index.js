@@ -1,3 +1,53 @@
+
+
+function histogram(data, size) {
+    let min = Infinity;
+    let max = -Infinity;
+
+    for (const item of data) {
+        if (item < min) min = item;
+        else if (item > max) max = item;
+    }
+
+    const bins = Math.ceil((max - min + 1) / size);
+
+    const histogram = new Array(bins).fill(0);
+
+    for (const item of data) {
+        histogram[Math.floor((item - min) / size)]++;
+    }
+
+    return histogram;
+}
+
+class TimeTag {
+	constructor(hours, minutes, seconds){
+		this.time = {hours, minutes, seconds}
+		this.timeSec = hours*60*60 + minutes*60 + seconds
+	}
+
+	static parse(timeStr){
+		let [hours, minutes, seconds] = [0,0,0]
+		const split = timeStr.split(':').map(v => parseInt(v))
+		switch (split.length) {
+			case 2:
+				[minutes, seconds] = split
+				break;
+			case 3:
+				[hours, minutes, seconds] = split
+				break;
+			default:
+				break
+		}
+		const timeSec = hours*60*60 + minutes*60 + seconds
+
+		if(timeSec && timeSec > 0)
+			return new TimeTag(hours, minutes, seconds)
+
+		return null
+	}
+}
+
 class YoutubeApp {
 	constructor(url){
 		this.log('init')
@@ -23,22 +73,30 @@ class YoutubeApp {
 
 		ytcm
 			.getComments(payload)
-			.then((data) => {
+			.then((res) => {
 
-				data.comments.forEach(value => {
-					const timeTagString = (value.text.match(/\d+:\d{1,2}/g) || [])[0]
-					if(timeTagString){
-						const [minutes, seconds] = timeTagString.split(':').map(v => parseInt(v))
-						value.timeTag = { minutes, seconds }
-					}
-						
-					this.comments.push(value)
+				res.comments.forEach(comment => {
+					const timeTags = []
+					const timeTagStrs = comment.text.match(/[\d:]+/g) || []
+					timeTagStrs.forEach(timeTagStr => {
+						const timeTag = TimeTag.parse(timeTagStr)
+						if(timeTag){
+							timeTags.push(timeTag)
+						}
+					})
+					comment.timeTags = timeTags
+					
+					this.comments.push(comment)
 
 				})
-				this.log(this.comments.length, this.comments.filter(comment => comment.timeTag))
+				this.log(this.comments.length, 
+					this.comments
+						.filter(comment => comment.timeTags.length > 0)
+						//.map(v => v.timeTags[0].timeSec)
+					)
 				
-				if(data.continuation)
-					this.startGetComment(data.continuation)
+				if(res.continuation)
+					this.startGetComment(res.continuation)
 				else
 					this.log('comment end~!')
 

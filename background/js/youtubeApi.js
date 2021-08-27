@@ -20,7 +20,9 @@ class YoutubeApi {
             code: `extensionId = '${chrome.runtime.id}'`,
         }, () => {
             this.loadScript({file: `background/js/script/yt-comment-scraper.js`}, ()=>{
-                this.loadScript({file: `background/js/script/index.js`}, callback)
+				this.loadScript({file: `background/js/script/chart.js`}, ()=>{
+               		this.loadScript({file: `background/js/script/index.js`}, callback)
+				})
             })
         })
 	}

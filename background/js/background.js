@@ -1,6 +1,7 @@
 const youtubes = {}
 
 chrome.tabs.onUpdated.addListener((tabId, changeInfo, tab) => {
+	//console.log(changeInfo);
 
 	if (changeInfo.status == 'complete'){
 		if(tab.url.includes('youtube.com/watch')){

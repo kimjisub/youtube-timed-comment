@@ -1,0 +1,83 @@
+<html>
+    <head>
+        <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    </head>
+
+<body>
+<div>
+  <canvas id="myChart"></canvas>
+</div>
+
+<script>
+function histogram(data, {size, min, max}) {
+    min = min == undefined ? Infinity : min;
+    max = max == undefined ? Infinity : max;
+
+    for (const item of data) {
+        if (item < min) min = item;
+        else if (item > max) max = item;
+    }
+
+    const bins = Math.ceil((max - min + 1) / size);
+
+    const histogram = new Array(bins).fill(0);
+
+    for (const item of data) {
+        histogram[Math.floor((item - min) / size)]++;
+    }
+
+    return {min, max, histogram};
+}
+
+
+const rawData = [500,267,372,22,450,235,363,372,186,207,3,24,25,22,340,357,271,271,315,27,384,259,501,325,266,230,265,275,370,371,185,463,26,270,521,435,20,160,122,272,27,88,368,128,385,260,521,399,235,259,128,507,214,266,306,24,384,77,28,272,100,321,26,395,377,167,64,216,523,286,100,27,395,28,270,436,258,271,272,287,288,27,155,26,326,27]
+const dataRange = {min:1, max:518}
+
+const histoData = histogram(rawData, 10)
+
+const distribution = [];
+
+for(let i=0;i<rawData.length;i++) {
+    const sum = 0; // 
+    for(let j=0;j<distribution.length;j++) {
+        sum += 
+    }
+}
+
+
+
+
+const labels = [
+  'January',
+  'February',
+  'March',
+  'April',
+  'May',
+  'June',
+];
+const data = {
+  labels: labels,
+  datasets: [{
+    label: 'My First dataset',
+    backgroundColor: 'rgb(255, 99, 132)',
+    borderColor: 'rgb(255, 99, 132)',
+    data: [0, 10, 5, 2, 20, 30, 45],
+  }]
+};
+const config = {
+  type: 'line',
+  data: data,
+  normalized: true,
+  options: {}
+};
+
+
+ var myChart = new Chart(
+    document.getElementById('myChart'),
+    config
+  );
+
+</script>
+
+</body>
+</html>
