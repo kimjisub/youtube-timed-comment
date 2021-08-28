@@ -1,115 +1,52 @@
-function toHistogram(data, { size, min, max }) {
-	let cmin = Infinity;
-	let cmax = -Infinity;
-
-	for (const item of data) {
-		if (item < cmin) cmin = item;
-		else if (item > cmax) cmax = item;
-	}
-
-	min = min != undefined ? min : cmin;
-	max = max != undefined ? max : cmax;
-
-	const histoSize = Math.ceil((max - min + 1) / size);
-
-	const res = new Array(histoSize).fill(0);
-
-	for (const item of data) {
-		const index = Math.floor((item - min) / size);
-		if (0 <= index && index < res.length) res[index]++;
-	}
-
-	return { data: res, info: { min, max } };
-}
-
-function applyAmbientWeights(list, around) {
-	const size = list.length;
-	const ret = new Array(size).fill(0);
-	for (let i = 0; i < size; i++) {
-		let sum = 0;
-		let count = 0;
-		const start = Math.max(0, i - around);
-		const end = Math.min(size - 1, i + around);
-		for (let j = start; j <= end; j++) {
-			const diff = Math.abs(i - j);
-			const diffRatio = diff / around || 0;
-			const weight = 1 - diffRatio ** 2;
-			if (list[j] > 0) {
-				sum += weight * list[j];
-				count++;
-			}
-		}
-
-		ret[i] = sum;
-	}
-	return ret;
-}
-
-class TimeTag {
-	constructor(hours, minutes, seconds) {
-		this.time = { hours, minutes, seconds };
-		this.timeSec = hours * 60 * 60 + minutes * 60 + seconds;
-	}
-
-	toString() {
-		const time = this.time;
-		return `${time.hours}:${time.minutes}:${time.seconds}`;
-	}
-
-	static fromSeconds(sec) {
-		const hours = Math.floor(Math.floor(sec / 60) / 60);
-		const minutes = Math.floor(sec / 60) % 60;
-		const seconds = sec % 60;
-		return new TimeTag(hours, minutes, seconds);
-	}
-
-	static parse(timeStr) {
-		let [hours, minutes, seconds] = [0, 0, 0];
-		const split = timeStr.split(':').map((v) => parseInt(v));
-		switch (split.length) {
-			case 2:
-				[minutes, seconds] = split;
-				break;
-			case 3:
-				[hours, minutes, seconds] = split;
-				break;
-			default:
-				break;
-		}
-		const timeSec = hours * 60 * 60 + minutes * 60 + seconds;
-
-		if (timeSec && timeSec > 0) return new TimeTag(hours, minutes, seconds);
-
-		return null;
-	}
-}
-
 class YoutubeApp {
 	constructor(url) {
-		this.log('init');
 		this.url = url;
 		this.videoId = new URLSearchParams(new URL(this.url).search).get('v');
 		this.comments = [];
-		this.video = document.querySelector('.html5-main-video');
-		this.active = true;
+		this.video = this.getVideoView();
+		this.isDestroyed = false;
+		this.isActive = false;
+		this.log('init', this.videoId);
+
+		this.tryActiveInterval = setInterval(() => {
+			if (this.tryActive()) this.active();
+		}, 1000);
+	}
+
+	tryActive() {
+		if (this.isDestroyed) return;
+		if (this.isActive) return;
+
+		return this.video.duration > 0;
+	}
+
+	active() {
+		if (this.isDestroyed) return;
+		if (this.isActive) return;
+
+		this.log('active', this.videoId);
+
+		clearInterval(this.tryActiveInterval);
+
+		this.isActive = true;
 
 		this.initChart();
 		this.startGetComment();
 	}
 
 	destroy() {
-		this.active = false;
+		if (this.isDestroyed) return;
+		this.log('destroy', this.videoId);
 
-		this.chart.destroy();
-	}
-
-	sendMessage(msg) {
-		this.log('sendMessage', msg);
-		chrome.runtime.sendMessage(extensionId, msg);
+		this.isDestroyed = true;
+		this.isActive = false;
+		this.chart?.destroy();
 	}
 
 	startGetComment(continuation) {
-		if (!this.active) return;
+		if (this.isDestroyed) return;
+		if (!this.isActive) return;
+
 		const payload = {
 			videoId: this.videoId,
 			sortByNewest: false,
@@ -120,6 +57,8 @@ class YoutubeApp {
 		ytcm
 			.getComments(payload)
 			.then((res) => {
+				if (!this.isActive) return;
+
 				res.comments.forEach((comment) => {
 					const timeTags = [];
 					const timeTagStrs = comment.text.match(/[\d:]+/g) || [];
@@ -148,7 +87,6 @@ class YoutubeApp {
 	}
 
 	initChart() {
-		this.log('init chart');
 		this.canvas = document.createElement('canvas');
 		this.canvas.style =
 			'width:100%;height:100px;bottom:-1px;position:absolute;';
@@ -257,10 +195,3 @@ class YoutubeApp {
 		console.log('YTC', ...msg);
 	}
 }
-
-if (typeof youtubeApp != 'undefined') youtubeApp.destroy();
-youtubeApp = new YoutubeApp(location.href);
-
-onMessage = (event) => {
-	this.log('onMessage', event.data);
-};

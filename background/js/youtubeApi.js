@@ -6,7 +6,7 @@ class YoutubeApi {
 		this.active = false;
 		this.log('New Youtube', this.url);
 
-		this.loadApp().then(() => {
+		this.loadApp().then((res) => {
 			this.active = true;
 		});
 	}
@@ -16,23 +16,37 @@ class YoutubeApi {
 	}
 
 	async loadApp() {
-		return Promise.all([
-			this.loadScript({ code: `extensionId = '${chrome.runtime.id}'` }),
-			this.loadScript({ file: `background/js/script/yt-comment-scraper.js` }),
-			this.loadScript({ file: `background/js/script/chart.js` }),
-			this.loadScript({ file: `background/js/script/index.js` }),
-		]);
+		return new Promise((resolve, reject) => {
+			this.loadScript({
+				code: `
+				alreadyLoaded = typeof extensionId == 'string';
+				extensionId = '${chrome.runtime.id}';
+				alreadyLoaded`,
+			})
+				.then(async (res) => {
+					const alreadyLoaded = res[0];
+					this.log('alreadyLoaded', alreadyLoaded);
+					if (!alreadyLoaded)
+						this.log(
+							await Promise.all([
+								this.loadScript({ file: `script/lib/yt-comment-scraper.js` }),
+								this.loadScript({ file: `script/lib/chart.js` }),
+								this.loadScript({ file: `script/chart-math.js` }),
+								this.loadScript({ file: `script/time-tag.js` }),
+								this.loadScript({ file: `script/youtube-app.js` }),
+							])
+						);
+					this.loadScript({ file: `script/index.js` })
+						.then(resolve)
+						.catch(reject);
+				})
+				.catch(reject);
+		});
 	}
 
 	async loadScript(script) {
 		return new Promise((resolve, reject) => {
 			chrome.tabs.executeScript(this.tab.id, script, resolve);
-		});
-	}
-
-	sendMessage(data) {
-		chrome.tabs.executeScript(this.tab.id, {
-			code: `window.postMessage(${JSON.stringify(data)}, '*')`,
 		});
 	}
 
