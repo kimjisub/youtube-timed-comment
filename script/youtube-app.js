@@ -1,49 +1,66 @@
 class YoutubeApp {
-	constructor(url) {
+	/** YoutubeApp 생명주기
+	 *
+	 * constructor(location.href, document.querySelector('.html5-main-video'))
+	 *
+	 * onCreate()						처음 로딩이 되었을 때
+	 * onActive()						비디오가 로딩이 됐을 때
+	 * onDestroy()						다른 창으로 이동되어 영상과의 연결이 끊겼을 때
+	 * onNewCommentLoaded(newComments)		댓글 업데이트가 되었을 때
+	 * onCommentLoadEnd(comments)			댓글 불러오기가 끝났을 때
+	 */
+	constructor(url, video) {
 		this.url = url;
+		this.video = video;
+
+		this.onCreate();
+	}
+
+	onCreate() {
 		this.videoId = new URLSearchParams(new URL(this.url).search).get('v');
 		this.comments = [];
-		this.video = this.getVideoView();
 		this.isDestroyed = false;
 		this.isActive = false;
-		this.log('init', this.videoId);
 
 		this.tryActiveInterval = setInterval(() => {
-			if (this.tryActive()) this.active();
+			if (this.tryActive()) this.onActive();
 		}, 1000);
 	}
 
-	tryActive() {
+	onActive() {
 		if (this.isDestroyed) return;
 		if (this.isActive) return;
-
-		return this.video.duration > 0;
-	}
-
-	active() {
-		if (this.isDestroyed) return;
-		if (this.isActive) return;
-
-		this.log('active', this.videoId);
 
 		clearInterval(this.tryActiveInterval);
 
 		this.isActive = true;
 
-		this.initChart();
-		this.startGetComment();
+		this.nextComments();
 	}
 
-	destroy() {
+	onDestroy() {
 		if (this.isDestroyed) return;
-		this.log('destroy', this.videoId);
 
 		this.isDestroyed = true;
 		this.isActive = false;
-		this.chart?.destroy();
 	}
 
-	startGetComment(continuation) {
+	onNewCommentLoaded(comments, newComments) {}
+	onCommentLoadEnd(comments) {}
+
+	destroy() {
+		this.onDestroy();
+	}
+
+	// Check is video loaded
+	tryActive() {
+		if (this.isDestroyed) return false;
+		if (this.isActive) return false;
+
+		return this.video.duration > 0;
+	}
+
+	nextComments(continuation) {
 		if (this.isDestroyed) return;
 		if (!this.isActive) return;
 
@@ -59,6 +76,8 @@ class YoutubeApp {
 			.then((res) => {
 				if (!this.isActive) return;
 
+				const newComments = [];
+
 				res.comments.forEach((comment) => {
 					const timeTags = [];
 					const timeTagStrs = comment.text.match(/[\d:]+/g) || [];
@@ -70,20 +89,48 @@ class YoutubeApp {
 					});
 					comment.timeTags = timeTags;
 
+					newComments.push(comment);
 					this.comments.push(comment);
 				});
-				this.log(
-					this.comments.length,
-					this.comments.filter((comment) => comment.timeTags.length > 0).length
-				);
-				this.updateChart();
+				this.onNewCommentLoaded(this.comments, newComments);
 
-				if (res.continuation) this.startGetComment(res.continuation);
-				else this.log('comment end~!');
+				if (res.continuation) this.nextComments(res.continuation);
+				else this.onCommentLoadEnd(this.comments);
 			})
-			.catch((error) => {
-				this.log(error);
-			});
+			.catch((error) => {});
+	}
+
+	log(...msg) {
+		console.log('YTC', ...msg);
+	}
+}
+
+class MyYoutubeApp extends YoutubeApp {
+	constructor(url, video) {
+		super(url, video);
+	}
+	onCreate() {
+		super.onCreate();
+		this.log('onCreate');
+	}
+	onActive() {
+		super.onActive();
+		this.log('onActive');
+		this.initChart();
+	}
+	onDestroy() {
+		super.onDestroy();
+		this.log('onDestroy');
+		this.chart?.destroy();
+	}
+	onNewCommentLoaded(comments, newComments) {
+		super.onNewCommentLoaded(comments, newComments);
+		this.log('onNewCommentLoaded', comments, newComments);
+		this.updateChart();
+	}
+	onCommentLoadEnd(comments) {
+		super.onCommentLoadEnd(comments);
+		this.log('onCommentLoadEnd', comments);
 	}
 
 	initChart() {
@@ -128,7 +175,7 @@ class YoutubeApp {
 					display: false,
 				},
 				tooltip: {
-					//enabled: false
+					enabled: false,
 				},
 			},
 		};
@@ -138,6 +185,7 @@ class YoutubeApp {
 				.map((v, i) => TimeTag.fromSeconds(i).toString()),
 			datasets: [
 				{
+					type: 'bar',
 					label: '댓글 개수',
 					backgroundColor: 'rgb(0, 99, 132, 0.5)',
 					borderColor: 'rgb(0, 99, 132, 0.5)',
@@ -147,9 +195,9 @@ class YoutubeApp {
 					pointBackgroundColor: 'rgba(0, 0, 0, 0)',
 					pointBorderColor: 'rgba(0, 0, 0, 0)',
 					data: [],
-					type: 'bar',
 				},
 				{
+					type: 'line',
 					label: '댓글 밀도',
 					backgroundColor: 'rgb(255, 255, 255, 0.5)',
 					borderColor: 'rgb(255, 255, 255, 0.5)',
@@ -162,7 +210,6 @@ class YoutubeApp {
 			],
 		};
 		this.chart = new Chart(this.canvas, {
-			type: 'line',
 			data,
 			options,
 		});
@@ -185,13 +232,5 @@ class YoutubeApp {
 		this.chart.data.datasets[0].data = histo.data;
 		this.chart.data.datasets[1].data = ambientHisto;
 		this.chart.update();
-	}
-
-	getVideoView() {
-		return document.querySelector('.html5-main-video');
-	}
-
-	log(...msg) {
-		console.log('YTC', ...msg);
 	}
 }
