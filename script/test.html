@@ -1,6 +1,7 @@
 <html>
 	<head>
 		<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+		<script src="./chart-math.js"></script>
 	</head>
 
 	<body>
@@ -12,58 +13,10 @@
 		</div>
 
 		<script>
-			function toHistogram(data, { size, min, max }) {
-				let cmin = Infinity;
-				let cmax = -Infinity;
-
-				for (const item of data) {
-					if (item < cmin) cmin = item;
-					else if (item > cmax) cmax = item;
-				}
-
-				min = min != undefined ? min : cmin;
-				max = max != undefined ? max : cmax;
-
-				const histoSize = Math.ceil((max - min + 1) / size);
-
-				const res = new Array(histoSize).fill(0);
-
-				for (const item of data) {
-					console.log(item , Math.floor((item - min) / histoSize));
-					const index = Math.floor((item - min) / size)
-					if(0 <= index && index < res.length)
-						res[index]++;
-				}
-
-				return { data: res, info: { min, max } };
-			}
-
-			function applyAmbientWeights(list, around){
-				const size = list.length
-				const ret = new Array(size).fill(0);
-				for(let i=0;i<size;i++){
-					let sum = 0;
-					let count = 0;
-					const start = Math.max(0, i-around)
-					const end = Math.min(size-1, i+around)
-					for(let j=start;j<=end;j++){
-						const diff = Math.abs(i-j)
-						const diffRatio = (diff/around) || 0
-						const weight = 1 - diffRatio**2
-						if(list[j] > 0){
-							sum += weight * list[j]
-							count++;
-						}
-					}
-					
-					console.log(count)
-					ret[i] = sum
-				}
-				return ret
-			}
+			
 			
 
-			const rawData = [100, 230,
+			const rawData = [100,100,101,101
 				// 500, 267, 372, 22, 450, 235, 363, 372, 186, 207, 3, 24, 25, 22, 340,
 				// 357, 271, 271, 315, 27, 384, 259, 501, 325, 266, 230, 265, 275, 370,
 				// 371, 185, 463, 26, 270, 521, 435, 20, 160, 122, 272, 27, 88, 368, 128,
