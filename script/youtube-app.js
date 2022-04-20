@@ -116,6 +116,8 @@ class MyYoutubeApp extends YoutubeApp {
 	onActive() {
 		super.onActive();
 		this.log('onActive');
+		this.initPadding();
+		this.initComment();
 		this.initChart();
 	}
 	onDestroy() {
@@ -126,11 +128,33 @@ class MyYoutubeApp extends YoutubeApp {
 	onNewCommentLoaded(comments, newComments) {
 		super.onNewCommentLoaded(comments, newComments);
 		this.log('onNewCommentLoaded', comments, newComments);
+		this.comments = comments;
+		this.commentDiv.innerHTML = this.comments
+			.filter((comment) => comment.timeTags.length > 0)
+			.map((comment) => comment.text)
+			.join('<br/>');
 		this.updateChart();
 	}
 	onCommentLoadEnd(comments) {
 		super.onCommentLoadEnd(comments);
 		this.log('onCommentLoadEnd', comments);
+	}
+
+	initPadding() {
+		// document.querySelector('#player-theater-container').style.paddingBottom = '50px';
+	}
+
+	initComment() {
+		this.comments = [];
+		this.commentDiv = document.createElement('yt-formatted-string');
+		this.commentDiv.setAttribute(
+			'class',
+			'content style-scope ytd-video-secondary-info-renderer'
+		);
+		this.commentDiv.setAttribute('force-default-style', '');
+		this.commentDiv.setAttribute('split-lines', '');
+		const target = document.querySelector('#related');
+		target.insertBefore(this.commentDiv, target.firstChild);
 	}
 
 	initChart() {
@@ -234,3 +258,5 @@ class MyYoutubeApp extends YoutubeApp {
 		this.chart.update();
 	}
 }
+
+console.log('Youtube App Loaded');
