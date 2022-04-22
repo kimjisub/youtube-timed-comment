@@ -147,6 +147,7 @@ class MyYoutubeApp extends YoutubeApp {
 	initComment() {
 		this.comments = [];
 		this.commentDiv = document.createElement('yt-formatted-string');
+		this.commentDiv.setAttribute('id', 'time-tag-comment');
 		this.commentDiv.setAttribute(
 			'class',
 			'content style-scope ytd-video-secondary-info-renderer'
@@ -154,18 +155,21 @@ class MyYoutubeApp extends YoutubeApp {
 		this.commentDiv.setAttribute('force-default-style', '');
 		this.commentDiv.setAttribute('split-lines', '');
 		const target = document.querySelector('#related');
+		target.querySelectorAll('#time-tag-comment').forEach((e) => e.remove());
 		target.insertBefore(this.commentDiv, target.firstChild);
 	}
 
 	initChart() {
 		this.canvas = document.createElement('canvas');
+		this.canvas.setAttribute('id', 'chart');
 		this.canvas.style =
 			'width:100%;height:100px;bottom:-1px;position:absolute;';
-		document
-			.querySelector(
-				'#movie_player > div.ytp-chrome-bottom > div.ytp-progress-bar-container > div.ytp-progress-bar'
-			)
-			.append(this.canvas);
+		const target = document.querySelector(
+			'#movie_player > div.ytp-chrome-bottom > div.ytp-progress-bar-container > div.ytp-progress-bar'
+		);
+		target.querySelectorAll('#chart').forEach((e) => e.remove());
+
+		target.append(this.canvas);
 
 		const options = {
 			animation: true,
